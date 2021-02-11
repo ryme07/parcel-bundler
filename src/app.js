@@ -4,11 +4,13 @@ import createRenderer from "./js/createRenderer";
 import createCamera from "./js/createCamera";
 import createCube from "./js/createCube";
 import createScene from "./js/createScene";
+import createControls from "./js/createControls";
 import "./styles/main.scss";
 
 const renderer = createRenderer();
 const scene = createScene();
 const camera = createCamera();
+const controls = createControls(camera, renderer.domElement);
 
 const cubes = {
   pink: createCube({ color: 0xff00ce, x: -1, y: -1, z: 2 }),
