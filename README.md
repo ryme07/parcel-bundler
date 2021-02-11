@@ -17,4 +17,4 @@ Run `npm run prod` to build the project. The build artifacts will be stored in t
 
 ## Upcoming features 
 
-...
+A THREEJS branch offers a basic scene configuration. 
