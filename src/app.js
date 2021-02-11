@@ -31,8 +31,16 @@ const updateCube = () => {
   cubes.cyan.rotation.y += 0.05;
 };
 
+const updateControl = () => {
+  controls.update();
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 1;
+};
+
 animate(() => {
   updateCube();
+  updateControl();
+
   renderer.render(scene, camera);
 });
 
