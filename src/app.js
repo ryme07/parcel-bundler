@@ -8,6 +8,7 @@ import createControls from "./js/createControls";
 import "./styles/main.scss";
 import * as THREE from "three";
 
+
 const objects = []
 
 const renderer = createRenderer();
