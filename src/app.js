@@ -1,61 +1,120 @@
-import animate from "./js/animate";
-import createLight from "./js/createLight";
-import createRenderer from "./js/createRenderer";
-import createCamera from "./js/createCamera";
-import createCube from "./js/createCube";
-import createScene from "./js/createScene";
-import "./styles/main.scss";
-import * as THREE from "three";
+var regl = createREGL({
+  extensions: ['webgl_draw_buffers', 'oes_texture_float']
+})
 
 
-const renderer = createRenderer();
-const scene = createScene();
-const camera = createCamera();
+const nodeCount = 100;
 
-const cubes = {
-  pink: createCube({ color: 0xff00ce, positionX: -1, positionY: -1, positionZ: 2 }),
-  purple: createCube({ color: 0x9300fb, positionX: 1, positionY: -1 }),
-  blue: createCube({ color: 0x0065d9, positionX: 1, positionY: 1, positionZ: -2 }),
-  cyan: createCube({ color: 0x00d7d0, positionX: -1, positionY: 1 }),
-};
+// const nodes = Array(nodeCount).fill().map(() => ({
+//   position: [Math.random(), Math.random()]
+// }));
 
-const light = createLight();
 
-for (const cube of Object.values(cubes)) {
-  scene.add(cube);
+// const edges = [];
+// for (let i = 0; i < nodeCount * 2; i++) { // Exemple : 2*nodeCount arêtes
+//   const source = Math.floor(Math.random() * nodeCount);
+//   const target = Math.floor(Math.random() * nodeCount);
+//   if (source !== target) {
+//     edges.push({ source, target });
+//   }
+// }
+
+const nodes = Array(nodeCount).fill().map(() => ({
+  position: [Math.random() * 2 - 1, Math.random() * 2 - 1],
+  direction: [Math.random() * 0.02 - 0.01, Math.random() * 0.02 - 0.01], // Vitesse et direction initiales
+}));
+
+const edges = [];
+for (let i = 0; i < nodeCount * 2; i++) {
+  const source = Math.floor(Math.random() * nodeCount);
+  const target = Math.floor(Math.random() * nodeCount);
+  if (source !== target) {
+    edges.push({ source, target });
+  }
 }
 
-scene.add(light);
+// Fonction pour dessiner les arêtes
+const drawEdges = regl({
+  frag: `
+    precision mediump float;
+    void main() {
+      gl_FragColor = vec4(1, 0, 0, 1);
+    }`,
 
+  vert: `
+    precision mediump float;
+    attribute vec2 position;
+    void main() {
+      gl_Position = vec4(position, 0, 1);
+    }`,
+  attributes: {
+    position: regl.prop('positions'),
+  },
+  count: regl.prop('count'),
+  primitive: 'lines',
 
-// ADD CUBE IN THE SCENE
-const mouse = new THREE.Vector2()
-const raycaster = new THREE.Raycaster()
-const geometry = new THREE.BoxGeometry();
-const material = new THREE.MeshBasicMaterial({
-  color: 0x00ff00
+  // attributes: {
+  //   position: edges.flatMap(edge => [nodes[edge.source].position, nodes[edge.target].position]),
+  // },
+
+  // count: edges.length * 2,
+
+  // primitive: 'lines',
 });
 
-const cube = new THREE.Mesh(geometry, material);
+// Fonction pour dessiner les nœuds
+const drawNodes = regl({
+  frag: `
+    precision mediump float;
+    void main() {
+      gl_FragColor = vec4(0, 1, 0, 1);
+    }`,
 
-const distance = 5;
+  vert: `
+    precision mediump float;
+    attribute vec2 position;
+    void main() {
+      gl_PointSize = 10.0;
+      gl_Position = vec4(position, 0, 1);
+    }`,
+  attributes: {
+    position: regl.prop('positions'),
+  },
+  count: regl.prop('count'),
+  primitive: 'points',
+  // attributes: {
+  //   position: nodes.map(node => node.position),
+  // },
 
+  // count: nodes.length,
 
-
-
-
-
-animate(() => {
-  // updateCube();
-  // updateControl();
-
-  renderer.render(scene, camera);
+  // primitive: 'points',
 });
 
-// RESIZE SCENE
-window.addEventListener("resize", () => {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  camera.aspect = window.innerWidth / window.innerHeight;
+function updatePositions() {
+  nodes.forEach((node, index) => {
+    node.position[0] += node.direction[0];
+    node.position[1] += node.direction[1];
+    if (Math.abs(node.position[0]) > 1) node.direction[0] *= -1;
+    if (Math.abs(node.position[1]) > 1) node.direction[1] *= -1;
+  });
+}
 
-  camera.updateProjectionMatrix();
+regl.frame(() => {
+  updatePositions();
+
+  regl.clear({
+    color: [0, 0, 0, 1],
+    depth: 1,
+  });
+
+  drawEdges({
+    positions: edges.flatMap(edge => [nodes[edge.source].position, nodes[edge.target].position]),
+    count: edges.length * 2,
+  });
+
+  drawNodes({
+    positions: nodes.map(node => node.position),
+    count: nodes.length,
+  });
 });
